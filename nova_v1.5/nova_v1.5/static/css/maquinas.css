@@ -1,0 +1,18 @@
+/*
+  maquinas.css — propio del módulo Máquinas (maquinas.html).
+  Cuatro contadores por estado y la tabla del inventario.
+*/
+.resumen-maquinas { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 22px; }
+
+/* .resumen-item se comparte con alertas.css: tarjeta con un número grande */
+.resumen-item { background: var(--tarjeta); border: 1px solid var(--borde); border-radius: 14px; padding: 16px 20px; display: flex; flex-direction: column; gap: 6px; }
+.resumen-item span { color: var(--apagado); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+.resumen-item strong { font-size: 1.7rem; }
+.resumen-ok strong   { color: #4ade80; }
+.resumen-aviso strong { color: #facc15; }
+.resumen-mal strong  { color: #f87171; }
+
+/* Código de máquina en letra tipo código para leerlo fácil (EQ-LOG-01) */
+td.codigo { font-family: Consolas, 'Courier New', monospace; color: var(--acento-2); white-space: nowrap; }
+
+@media (max-width: 1000px) { .resumen-maquinas { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

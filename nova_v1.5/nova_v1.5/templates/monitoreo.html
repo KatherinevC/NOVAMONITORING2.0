@@ -1,0 +1,87 @@
+{#
+  Módulo Monitoreo. Hereda el menú, el logo y el perfil de layout.html.
+  Datos que recibe desde la ruta monitoreo(): areas, sensores, sensores_disponibles, historial,
+  area_seleccionada. Todo procede de novadb.
+#}
+{% extends 'layout.html' %}
+{% block titulo %}Monitoreo{% endblock %}
+{% block css_pagina %}<link rel="stylesheet" href="{{ url_for('static', filename='css/monitoreo.css') }}">{% endblock %}
+{% block titulo_pagina %}Monitoreo de sensores{% endblock %}
+{% block subtitulo %}Últimas mediciones, rangos configurados e historial reciente.{% endblock %}
+
+{% block contenido %}
+{# Resumen rápido calculado con los sensores que llegaron de la base de datos #}
+<section class="monitor-metrics">
+  <article class="monitor-metric"><span>Sensores activos</span><strong>{{ sensores|length }}</strong></article>
+  <article class="monitor-metric"><span>Con lectura</span><strong>{{ sensores|selectattr('estado_lectura', 'ne', 'sin_lectura')|list|length }}</strong></article>
+  <article class="monitor-metric"><span>Fuera de umbral</span><strong>{{ sensores|selectattr('estado_lectura', 'in', ['bajo_minimo', 'sobre_maximo'])|list|length }}</strong></article>
+  <article class="monitor-metric"><span>Lecturas mostradas</span><strong>{{ historial|length }}</strong></article>
+</section>
+
+{# ---------- Estado actual por sensor (con filtro por área) ---------- #}
+<section class="panel">
+  <div class="panel-heading"><div><h2>Estado actual por sensor</h2><p>Se muestra la última lectura registrada por sensor activo.</p></div></div>
+  <form method="get" action="{{ url_for('monitoreo') }}" class="filter-form">
+    <div class="form-field">
+      <label for="area">Filtrar por área</label>
+      <select name="area" id="area">
+        <option value="">Todas las áreas</option>
+        {% for area_item in areas %}<option value="{{ area_item.id_area }}" {{ 'selected' if area_seleccionada == area_item.id_area }}>{{ area_item.nombre_area }}</option>{% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Aplicar filtro</button>
+    <a href="{{ url_for('monitoreo') }}" class="btn btn-secondary">Limpiar</a>
+  </form>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Área</th><th>Máquina</th><th>Sensor</th><th>Variable</th><th class="num">Último valor</th><th class="num">Umbral mín.</th><th class="num">Umbral máx.</th><th>Estado de lectura</th><th>Fecha</th></tr></thead>
+      <tbody>
+      {% for sensor in sensores %}
+        <tr>
+          <td>{{ sensor.nombre_area }}</td>
+          <td><strong>{{ sensor.codigo_maquina }}</strong><small>{{ sensor.nombre_maquina }}</small><small>Máquina: {{ sensor.estado_maquina }}</small></td>
+          <td>{{ sensor.codigo_sensor }}</td>
+          <td>{{ sensor.variable }} <small>{{ sensor.unidad_medida }}</small></td>
+          <td class="num">{% if sensor.ultima_lectura is not none %}{{ '%.4f'|format(sensor.ultima_lectura) }}{% else %}—{% endif %}</td>
+          <td class="num">{{ sensor.umbral_min if sensor.umbral_min is not none else '—' }}</td>
+          <td class="num">{{ sensor.umbral_max if sensor.umbral_max is not none else '—' }}</td>
+          {# El estado se calcula en la consulta SQL comparando la última lectura con los umbrales #}
+          <td><span class="state state-{{ sensor.estado_lectura }}">{% if sensor.estado_lectura == 'normal' %}Normal{% elif sensor.estado_lectura == 'bajo_minimo' %}Bajo mínimo{% elif sensor.estado_lectura == 'sobre_maximo' %}Sobre máximo{% else %}Sin lectura{% endif %}</span></td>
+          <td>{% if sensor.fecha_ultima_lectura %}{{ sensor.fecha_ultima_lectura.strftime('%Y-%m-%d %H:%M:%S') if sensor.fecha_ultima_lectura.strftime else sensor.fecha_ultima_lectura }}{% else %}Sin datos{% endif %}</td>
+        </tr>
+      {% else %}<tr><td colspan="9" class="empty-state">No hay sensores activos para el filtro seleccionado.</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="help-note">El estado mostrado se calcula comparando la última lectura con los umbrales del sensor. No cambia automáticamente el estado operativo de la máquina.</p>
+</section>
+
+{# ---------- Registro manual de una lectura (solo roles que pueden ejecutar en MONITOREO) ---------- #}
+{% if puede_ejecutar('MONITOREO') %}
+<section class="panel">
+  <div class="panel-heading"><div><h2>Registrar lectura manual</h2><p>Útil para pruebas o para ingresar una medición recibida externamente.</p></div></div>
+  {# El servidor vuelve a validar sensor y valor; no se confía solo en el HTML. csrf_token protege el envío. #}
+  <form method="post" action="{{ url_for('monitoreo') }}" class="reading-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-field"><label for="id_sensor">Sensor activo</label>
+      <select id="id_sensor" name="id_sensor" required><option value="">Selecciona un sensor</option>{% for sensor in sensores_disponibles %}<option value="{{ sensor.id_sensor }}">{{ sensor.codigo_sensor }} — {{ sensor.nombre_maquina }} / {{ sensor.variable }} ({{ sensor.unidad_medida }})</option>{% endfor %}</select></div>
+    <div class="form-field"><label for="valor">Valor medido</label><input type="number" id="valor" name="valor" step="any" required placeholder="Ej. 35.75"></div>
+    <button type="submit" class="btn btn-primary">Guardar lectura</button>
+  </form>
+  <p class="help-note">Al guardar, MySQL ejecuta el trigger <code>trg_lectura_alerta</code>. Si el valor rebasa un umbral configurado, el trigger puede crear una alerta. Para generar lecturas automáticas usa el simulador del dashboard.</p>
+</section>
+{% else %}
+<section class="panel"><p class="help-note">Tu perfil tiene permiso de consulta, pero no tiene habilitada la ejecución de acciones en el módulo MONITOREO.</p></section>
+{% endif %}
+
+{# ---------- Últimas 100 lecturas ---------- #}
+<section class="panel">
+  <div class="panel-heading"><div><h2>Historial reciente</h2><p>Últimas 100 lecturas registradas en la base de datos.</p></div></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Fecha y hora</th><th>Área</th><th>Máquina</th><th>Sensor</th><th>Variable</th><th class="num">Valor</th></tr></thead>
+      <tbody>{% for lectura in historial %}<tr><td>{{ lectura.fecha_hora.strftime('%Y-%m-%d %H:%M:%S') if lectura.fecha_hora.strftime else lectura.fecha_hora }}</td><td>{{ lectura.nombre_area }}</td><td>{{ lectura.codigo_maquina }}</td><td>{{ lectura.codigo_sensor }}</td><td>{{ lectura.variable }} ({{ lectura.unidad_medida }})</td><td class="num">{{ '%.4f'|format(lectura.valor) }}</td></tr>{% else %}<tr><td colspan="6" class="empty-state">Todavía no hay lecturas registradas.</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

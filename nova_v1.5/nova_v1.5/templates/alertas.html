@@ -1,0 +1,57 @@
+{#
+  Módulo Alertas. Recibe `alertas` desde la ruta alertas(): las pendientes primero.
+  El botón "Marcar atendida" solo existe para roles con permiso de ejecutar en ALERTAS, y la ruta
+  lo vuelve a comprobar en el servidor.
+#}
+{% extends 'layout.html' %}
+{% block titulo %}Alertas{% endblock %}
+{% block css_pagina %}<link rel="stylesheet" href="{{ url_for('static', filename='css/alertas.css') }}">{% endblock %}
+{% block titulo_pagina %}Alertas de sensores{% endblock %}
+{% block subtitulo %}Lecturas que cruzaron un umbral. Al atenderlas queda registrado quién y cuándo.{% endblock %}
+
+{% block contenido %}
+{% set pendientes = alertas|rejectattr('atendida')|list|length %}
+<section class="resumen-alertas">
+  <article class="resumen-item resumen-mal"><span>Pendientes</span><strong>{{ pendientes }}</strong></article>
+  <article class="resumen-item resumen-ok"><span>Atendidas</span><strong>{{ alertas|length - pendientes }}</strong></article>
+  <article class="resumen-item"><span>Total mostradas</span><strong>{{ alertas|length }}</strong></article>
+</section>
+
+<section class="panel">
+  <div class="panel-heading"><div><h2>Alertas de sensores</h2><p>Las alertas pendientes aparecen primero. Al atender una alerta, se guarda el operario y se genera un evento en historial.</p></div></div>
+  {% if alertas %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Fecha</th><th>Máquina</th><th>Sensor / variable</th><th>Tipo</th><th class="num">Valor</th><th>Estado</th><th>Acción</th></tr></thead>
+      <tbody>
+      {% for a in alertas %}
+        {# Las pendientes se resaltan con la clase fila-pendiente (ver alertas.css) #}
+        <tr class="{{ '' if a.atendida else 'fila-pendiente' }}">
+          <td>{{ a.fecha_hora }}</td>
+          <td><strong>{{ a.maquina_codigo }}</strong><small>{{ a.nombre_maquina }}</small></td>
+          <td>{{ a.sensor_codigo }}<small>{{ a.variable }} ({{ a.unidad_medida }})</small></td>
+          <td><span class="state {{ 'state-bad' if a.tipo == 'sobre_maximo' else 'state-warn' }}">{{ 'Sobre máximo' if a.tipo == 'sobre_maximo' else 'Bajo mínimo' }}</span></td>
+          <td class="num">{{ a.valor }}</td>
+          <td>
+            <span class="state {{ 'state-ok' if a.atendida else 'state-bad' }}">{{ 'Atendida' if a.atendida else 'Pendiente' }}</span>
+            {% if a.responsable %}<small>Por: {{ a.responsable }}</small>{% endif %}
+          </td>
+          <td>
+            {% if not a.atendida and puede_ejecutar('ALERTAS') %}
+            <form method="post" class="form-en-linea">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="id_alerta" value="{{ a.id_alerta }}">
+              <button class="btn btn-primary btn-pequeno" type="submit">Marcar atendida</button>
+            </form>
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">No hay alertas para mostrar.</div>
+  {% endif %}
+</section>
+{% endblock %}

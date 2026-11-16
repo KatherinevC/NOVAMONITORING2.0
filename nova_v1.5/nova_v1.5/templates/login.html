@@ -1,0 +1,60 @@
+{#
+  Pantalla de inicio de sesión. El formulario se envía por POST a la ruta /login (rutas/rutas.py).
+  Variables que puede recibir:
+    error           credenciales incorrectas / cuenta pendiente (texto)
+    error_conexion  texto cuando NO hay conexión con el servidor de base de datos
+  Los mensajes de éxito (por ejemplo "Cuenta creada") llegan con flash().
+#}
+{% extends 'auth_layout.html' %}
+{% block titulo %}Iniciar sesión{% endblock %}
+{% block css_pagina %}<link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">{% endblock %}
+
+{% block intro %}
+  <span class="badge">ACCESO AL SISTEMA</span>
+  <h2>Iniciar sesión</h2>
+  <p>Accede a la plataforma NOVA para consultar el estado de la maquinaria industrial y gestionar los activos según tu perfil de usuario.</p>
+{% endblock %}
+
+{% block contenido %}
+  {# 1) Sin conexión con la base de datos: se avisa y se bloquea el botón, porque no se podría validar a nadie #}
+  {% if error_conexion %}
+  <div class="banner banner-error" role="alert">
+    <strong>Error en la conexión con el servidor de base de datos.</strong>
+    <span>{{ error_conexion }}</span>
+  </div>
+  {% endif %}
+
+  {# 2) Credenciales incorrectas o cuenta pendiente de aprobación #}
+  {% if error %}
+  <div id="errorMessage" class="error-message" role="alert">{{ error }}</div>
+  {% endif %}
+
+  {# 3) Mensajes de éxito, p. ej. después de registrarse #}
+  {% with mensajes = get_flashed_messages(with_categories=true) %}
+    {% for categoria, mensaje in mensajes %}<div class="flash flash-{{ categoria }}" role="status">{{ mensaje }}</div>{% endfor %}
+  {% endwith %}
+
+  {# Cada campo lleva name="..."; sin él el navegador no envía el dato. csrf_token protege el formulario #}
+  <form class="auth-form" id="loginForm" method="post" action="{{ url_for('login') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+    <div class="form-group">
+      <label for="username">Correo electrónico</label>
+      <input type="email" id="username" name="email" placeholder="usuario@nova.local" required autocomplete="username">
+    </div>
+
+    <div class="form-group">
+      <label for="password">Contraseña</label>
+      <input type="password" id="password" name="password" placeholder="Ingresa tu contraseña" required autocomplete="current-password">
+    </div>
+
+    <button type="submit" class="btn-submit" {{ 'disabled' if error_conexion }}>Ingresar a NOVA</button>
+
+    <div class="auth-links">
+      <a href="{{ url_for('olvido_contrasena') }}">¿Olvidaste tu contraseña?</a>
+      <span>¿No tienes cuenta? <a href="{{ url_for('registro') }}">Regístrate</a></span>
+    </div>
+  </form>
+{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static', filename='js/login.js') }}"></script>{% endblock %}

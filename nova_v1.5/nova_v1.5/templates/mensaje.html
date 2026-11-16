@@ -1,0 +1,14 @@
+{# Tarjeta genérica para mensajes: acceso denegado, sin conexión, módulos en construcción, recuperar contraseña #}
+{% extends 'auth_layout.html' %}
+{% block titulo %}{{ titulo }}{% endblock %}
+{% block css_pagina %}<link rel="stylesheet" href="{{ url_for('static', filename='css/mensaje.css') }}">{% endblock %}
+
+{% block intro %}
+  <span class="badge">{{ etiqueta }}</span>
+  <h2>{{ titulo }}</h2>
+  <p>{{ texto }}</p>
+{% endblock %}
+
+{% block contenido %}
+  <a class="btn-submit enlace-boton" href="{{ enlace }}">{{ texto_enlace }}</a>
+{% endblock %}

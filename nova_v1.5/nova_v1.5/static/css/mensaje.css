@@ -1,0 +1,11 @@
+/*
+  mensaje.css — propio de la tarjeta de mensajes (acceso denegado, sin conexión,
+  módulo en construcción, recuperar contraseña). Reutiliza la tarjeta de base.css.
+*/
+.auth-card { text-align: left; }
+.auth-intro p { font-size: 0.9rem; line-height: 1.55; }
+
+/* Etiqueta superior: el rojo/amarillo se aplica según el texto para darle jerarquía */
+.badge { padding: 3px 9px; border-radius: 999px; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.3); }
+
+.enlace-boton { margin-top: 6px; }

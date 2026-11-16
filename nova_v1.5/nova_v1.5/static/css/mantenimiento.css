@@ -1,0 +1,10 @@
+/*
+  mantenimiento.css — propio del módulo Mantenimiento (mantenimiento.html).
+  Rejilla del formulario de registro.
+*/
+.form-mantenimiento { display: flex; flex-direction: column; gap: 18px; }
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+.form-mantenimiento .form-field select, .form-mantenimiento .form-field input { width: 100%; min-width: 0; }
+.campo-ancho { width: 100%; }
+.form-mantenimiento .btn { align-self: flex-start; }
+.panel .help-note a { color: var(--acento-2); }

@@ -1,0 +1,175 @@
+{#
+  layout.html — esqueleto de TODAS las páginas con sesión iniciada.
+  Aquí viven las partes que se repiten: menú lateral (logo, estado, navegación), encabezado con
+  el perfil del usuario, aviso de "sin base de datos" y mensajes flash. Cada página solo rellena
+  los bloques de abajo, así el aspecto es idéntico en todo NOVA:
+
+    titulo         texto de la pestaña del navegador
+    css_pagina     hoja de estilos propia de la página (static/css/<pagina>.css)
+    categoria / titulo_pagina / subtitulo   encabezado de la página
+    estado_planta  (opcional) indicador al lado del perfil
+    contenido      el cuerpo de la página
+    scripts        JavaScript propio de la página
+
+  Permisos: puede_ver('CLAVE') muestra u oculta cada enlace según el rol (tabla permisos_rol);
+  puede_ejecutar('CLAVE') indica si el rol puede actuar o solo consultar ("Solo lectura").
+  request.endpoint es el nombre de la ruta actual y sirve para resaltar el menú activo.
+#}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NOVA Monitoring - {% block titulo %}{% endblock %}</title>
+  {# base.css = diseño común (menú, encabezado, paneles, tablas, botones). Después, el de cada página. #}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+  {% block css_pagina %}{% endblock %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+{% set ruta = request.endpoint %}
+<div class="layout">
+
+  {# ======================= MENÚ LATERAL ======================= #}
+  <aside class="sidebar">
+    <div>
+      {# Logo #}
+      <div class="sidebar-brand">
+        <img src="{{ url_for('static', filename='img/astronauta-nova.jpeg') }}" alt="NOVA Logo" class="brand-avatar">
+        <div class="brand-text">
+          <h2>NOVA</h2>
+          <span>MONITORING</span>
+        </div>
+      </div>
+
+      {# Estado del sistema: el punto se pone rojo si se pierde la conexión con la base de datos #}
+      <div class="status-box">
+        <span class="dot {{ 'red' if bd_sin_conexion else 'green' }}"></span>
+        <div>
+          <p class="status-title">{{ 'Base de datos sin conexión' if bd_sin_conexion else 'Sistema operativo' }}</p>
+          <p class="status-subtitle">Planta industrial</p>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section">
+          <span class="nav-label">MONITOREO</span>
+
+          <a href="{{ url_for('dashboard') }}" class="nav-item {{ 'active' if ruta == 'dashboard' }}">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            Inicio
+          </a>
+
+          {% if puede_ver('MAQUINAS') %}
+          <a href="{{ url_for('maquinas') }}" class="nav-item {{ 'active' if ruta == 'maquinas' }}">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"></rect><rect x="2" y="14" width="20" height="8" rx="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>
+            Máquinas
+          </a>
+          {% endif %}
+
+          {% if puede_ver('MONITOREO') %}
+          <a href="{{ url_for('monitoreo') }}" class="nav-item {{ 'active' if ruta == 'monitoreo' }}">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+            Monitoreo
+          </a>
+          {% endif %}
+
+          {% if puede_ver('ALERTAS') %}
+          <a href="{{ url_for('alertas') }}" class="nav-item {{ 'active' if ruta == 'alertas' }}">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+            Alertas
+            {% if not puede_ejecutar('ALERTAS') %}<span class="nav-chip">Solo lectura</span>{% endif %}
+            {# Cantidad real de alertas pendientes (la calcula datos_para_el_menu en rutas.py) #}
+            <span class="badge-count" id="badgeAlertas">{{ '%02d'|format(alertas_pendientes) if alertas_pendientes is not none else '--' }}</span>
+          </a>
+          {% endif %}
+
+          {% if puede_ver('HISTORICOS') %}
+          <a href="{{ url_for('historial') }}" class="nav-item {{ 'active' if ruta == 'historial' }}">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+            Historial
+          </a>
+          {% endif %}
+
+          {% if puede_ver('MANTENIMIENTO') %}
+          <a href="{{ url_for('mantenimiento') }}" class="nav-item {{ 'active' if ruta == 'mantenimiento' }}">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+            Mantenimiento
+            {% if not puede_ejecutar('MANTENIMIENTO') %}<span class="nav-chip">Solo lectura</span>{% endif %}
+          </a>
+          {% endif %}
+        </div>
+
+        {# La sección de administración solo existe para el rol que puede ver el módulo CRUD #}
+        {% if puede_ver('CRUD') %}
+        <div class="nav-section">
+          <span class="nav-label">ADMINISTRACIÓN</span>
+          <a href="{{ url_for('administrar') }}" class="nav-item {{ 'active' if ruta in ('administrar', 'decidir_solicitud') }}">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+            Administrar
+          </a>
+        </div>
+        {% endif %}
+      </nav>
+    </div>
+
+    <div class="sidebar-footer">
+      <div class="process-box">
+        <span class="dot green"></span>
+        <div>
+          <p class="process-title">Proceso automotriz</p>
+          <p class="process-subtitle">Monitoreo industrial</p>
+        </div>
+      </div>
+      <p class="version">NOVA V1.5</p>
+    </div>
+  </aside>
+
+  {# ======================= CONTENIDO ======================= #}
+  <main class="main-content">
+    {# Encabezado: título de la página a la izquierda, perfil del usuario a la derecha #}
+    <header class="top-header">
+      <div class="header-titles">
+        <span class="category-tag">{% block categoria %}INTELIGENCIA DE MANUFACTURA{% endblock %}</span>
+        <h1>{% block titulo_pagina %}NOVA Monitoring{% endblock %}</h1>
+        <p>{% block subtitulo %}Monitoreo de maquinaria industrial automotriz{% endblock %}</p>
+      </div>
+
+      <div class="user-profile">
+        {% block estado_planta %}{% endblock %}
+        <div class="avatar-circle">{{ session['nombre'][:1]|upper }}</div>
+        <div class="user-info">
+          <p class="user-name">{{ session['nombre'] }}</p>
+          <p class="user-role">{{ session['rol']|upper }}</p>
+        </div>
+        <a href="{{ url_for('logout') }}" class="logout-btn" title="Cerrar sesión">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        </a>
+      </div>
+    </header>
+
+    {# Aviso rojo cuando no hay conexión con el servidor de base de datos #}
+    {% if bd_sin_conexion %}
+    <div class="banner banner-error" role="alert">
+      <strong>Error en la conexión con el servidor de base de datos.</strong>
+      Verifica que MySQL (XAMPP) esté encendido. Los datos que ves pueden estar incompletos.
+    </div>
+    {% endif %}
+
+    {# Mensajes flash: confirmaciones o errores que las rutas dejan con flash(). Categorías: success, warning, danger #}
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+      {% if mensajes %}
+      <div class="flash-list">
+        {% for categoria, mensaje in mensajes %}<div class="flash flash-{{ categoria }}" role="status">{{ mensaje }}</div>{% endfor %}
+      </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block contenido %}{% endblock %}
+  </main>
+</div>
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,128 @@
+/*
+  dashboard.css — propio de la página de inicio (dashboard.html).
+  El menú, el encabezado y el perfil vienen de base.css. Aquí: tarjetas de resumen,
+  panel del simulador de lecturas y la tabla de últimas lecturas.
+*/
+
+/* ---- Tarjetas de resumen (4 números grandes) ---- */
+.metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 22px; }
+.metric-card { background-color: var(--tarjeta); border: 1px solid var(--borde); border-radius: 12px; padding: 20px 18px; display: flex; align-items: flex-start; gap: 16px; }
+.metric-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.purple-bg { background-color: rgba(167, 139, 250, 0.1); }
+.green-bg  { background-color: rgba(74, 222, 128, 0.1); }
+.yellow-bg { background-color: rgba(250, 204, 21, 0.1); }
+.red-bg    { background-color: rgba(248, 113, 113, 0.1); }
+.metric-label { font-size: 0.62rem; font-weight: 700; color: var(--apagado); letter-spacing: 0.5px; display: block; }
+.metric-value { font-size: 1.8rem; font-weight: 700; margin: 2px 0; line-height: 1.1; }
+.metric-sub { font-size: 0.7rem; color: var(--apagado-2); }
+
+/* ---- Simulador de lecturas ---- */
+.sim-controles { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px 18px; margin-bottom: 18px; }
+.sim-form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 14px; padding-right: 18px; border-right: 1px solid var(--borde); }
+.sim-controles .btn { min-height: 40px; }
+
+/* Cinco contadores */
+.sim-contadores { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 18px; }
+.sim-contadores div { background-color: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 10px 12px; }
+.sim-contadores span { display: block; font-size: 0.62rem; font-weight: 700; color: var(--apagado); letter-spacing: 0.4px; text-transform: uppercase; }
+.sim-contadores strong { font-size: 1.05rem; }
+
+/* Lista de verificación: dashboard.js cambia la clase de cada <li> a "ok" o "pendiente" */
+.checklist { list-style: none; display: grid; gap: 8px; }
+.checklist li { font-size: 0.82rem; color: var(--apagado); display: flex; align-items: center; gap: 10px; }
+.checklist .chk-icono { width: 20px; height: 20px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 0.75rem; border: 1px solid #334155; color: var(--apagado); flex-shrink: 0; }
+.checklist li.ok { color: var(--texto-2); }
+.checklist li.ok .chk-icono { color: #052e16; background: var(--verde); border-color: var(--verde); }
+.checklist li.fallo { color: #fca5a5; }
+.checklist li.fallo .chk-icono { color: #450a0a; background: var(--rojo); border-color: var(--rojo); }
+.help-note[hidden] { display: none; }
+
+/* ---- Últimas lecturas: la tabla usa el estilo común de base.css ---- */
+#panelUltimas td:first-child { font-variant-numeric: tabular-nums; color: var(--apagado); }
+
+@media (max-width: 1100px) {
+  .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+  .sim-contadores { grid-template-columns: repeat(2, 1fr); }
+  .sim-form { border-right: 0; padding-right: 0; }
+}
+@media (max-width: 600px) { .metrics-grid { grid-template-columns: 1fr; } }
+
+/* ======================= Gráficas de los sensores (graficas.js) ======================= */
+/* Selectores de arriba */
+.gr-controles { display: flex; flex-wrap: wrap; gap: 14px 18px; margin-bottom: 18px; }
+.gr-controles .form-field select { min-width: 240px; }
+
+/* Gráfica principal */
+.gr-titulo { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; margin-bottom: 8px; }
+.gr-titulo strong { font-size: 0.95rem; }
+.gr-umbrales { font-size: 0.74rem; color: var(--apagado); }
+
+.gr-caja { position: relative; background: var(--fondo); border: 1px solid var(--borde); border-radius: 12px; padding: 10px; }
+.gr-svg { display: block; width: 100%; height: auto; }
+.gr-vacio { color: var(--apagado); font-size: 0.8rem; padding: 26px 8px; text-align: center; }
+
+/* Elementos de las gráficas SVG */
+.gr-grid { stroke: #161b2c; stroke-width: 1; }
+.gr-eje { fill: #64748b; font-size: 11px; font-family: 'Inter', sans-serif; }
+.gr-linea { stroke: #818cf8; stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.gr-umbral { stroke-width: 1.4; stroke-dasharray: 6 4; vector-effect: non-scaling-stroke; }
+.gr-umbral-max { stroke: #f87171; }
+.gr-umbral-min { stroke: #facc15; }
+.gr-etiqueta { font-size: 10.5px; font-weight: 700; font-family: 'Inter', sans-serif; }
+.gr-etiqueta-max { fill: #f87171; }
+.gr-etiqueta-min { fill: #facc15; }
+.gr-punto-fuera { fill: #f87171; stroke: #0b0d14; stroke-width: 1.2; }
+.gr-punto-ultimo { fill: #818cf8; stroke: #ffffff; stroke-width: 1.6; }
+.gr-guia { stroke: #475569; stroke-width: 1; stroke-dasharray: 3 3; }
+
+/* Cuadro con el valor al pasar el mouse */
+.gr-tip { position: absolute; pointer-events: none; z-index: 2; min-width: 130px; display: flex; flex-direction: column; gap: 2px; background: #1b2136; border: 1px solid #334155; border-radius: 8px; padding: 7px 10px; font-size: 0.74rem; color: var(--texto-2); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45); }
+.gr-tip[hidden] { display: none; }
+.gr-tip strong { color: var(--texto); font-size: 0.85rem; }
+.gr-tip-normal { color: #4ade80; font-weight: 700; }
+.gr-tip-alto { color: #f87171; font-weight: 700; }
+.gr-tip-bajo { color: #facc15; font-weight: 700; }
+
+/* Estadísticas de la ventana */
+.gr-stats { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-top: 12px; }
+.gr-stat { background: var(--fondo); border: 1px solid var(--borde); border-radius: 10px; padding: 9px 12px; }
+.gr-stat span { display: block; font-size: 0.62rem; font-weight: 700; color: var(--apagado); text-transform: uppercase; letter-spacing: 0.4px; }
+.gr-stat strong { font-size: 0.95rem; }
+.gr-stat-alerta strong { color: #f87171; }
+
+/* Mini-gráficas de la máquina */
+.gr-subtitulo { margin: 24px 0 12px; font-size: 0.95rem; font-weight: 700; }
+.gr-subtitulo small { margin-left: 8px; font-weight: 500; font-size: 0.72rem; color: var(--apagado); }
+.gr-mini-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.gr-mini { text-align: left; font: inherit; color: inherit; background: var(--fondo); border: 1px solid var(--borde); border-left: 3px solid #22c55e; border-radius: 10px; padding: 10px 12px; cursor: pointer; transition: border-color 0.2s ease, background 0.2s ease; }
+.gr-mini:hover { background: #0f1424; border-color: #2a3350; }
+.gr-mini-alto { border-left-color: #f87171; }
+.gr-mini-bajo { border-left-color: #facc15; }
+.gr-mini-sin { border-left-color: #475569; }
+.gr-mini-activa { outline: 1px solid var(--acento-2); background: #101530; }
+.gr-mini-cab { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 4px; }
+.gr-mini-nombre { font-size: 0.72rem; color: var(--apagado); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gr-mini-cab strong { font-size: 0.85rem; white-space: nowrap; }
+.gr-mini-dibujo .gr-vacio { padding: 18px 4px; font-size: 0.7rem; }
+.gr-mini-dibujo .gr-linea { stroke-width: 1.6; }
+
+/* Dona y barras */
+.gr-fila { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.gr-fila .panel { margin-bottom: 22px; }
+.gr-dona { display: flex; align-items: center; gap: 26px; flex-wrap: wrap; }
+.gr-dona-svg { width: 190px; flex-shrink: 0; }
+.gr-dona-num { fill: #ffffff; font-size: 30px; font-weight: 700; font-family: 'Inter', sans-serif; }
+.gr-leyenda { list-style: none; display: grid; gap: 10px; flex: 1; min-width: 180px; }
+.gr-leyenda li { display: flex; align-items: center; gap: 10px; font-size: 0.82rem; color: var(--texto-2); }
+.gr-leyenda i { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.gr-leyenda span { flex: 1; }
+
+.gr-barras { display: grid; gap: 12px; }
+.gr-barra-fila { display: grid; grid-template-columns: 150px 1fr 36px; align-items: center; gap: 12px; font-size: 0.8rem; color: var(--texto-2); }
+.gr-barra-fila strong { text-align: right; }
+.gr-barra-nombre { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gr-barra { height: 12px; background: #161b2c; border-radius: 999px; overflow: hidden; }
+.gr-barra-relleno { height: 100%; background: linear-gradient(90deg, #f87171, #fb923c); border-radius: 999px; transition: width 0.4s ease; }
+
+@media (max-width: 1100px) { .gr-fila { grid-template-columns: 1fr; } .gr-stats { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 600px) { .gr-barra-fila { grid-template-columns: 100px 1fr 30px; } .gr-stats { grid-template-columns: repeat(2, 1fr); } }

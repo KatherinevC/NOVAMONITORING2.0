@@ -1,0 +1,109 @@
+{#
+  Módulo Administrar (solo rol administrador): aprobar o rechazar solicitudes de cuentas
+  con rol administrador y ver los usuarios registrados.
+  Variables: pendientes, resueltas, usuarios, falta_migracion, puede_decidir.
+#}
+{% extends 'layout.html' %}
+{% block titulo %}Administrar{% endblock %}
+{% block css_pagina %}<link rel="stylesheet" href="{{ url_for('static', filename='css/administrar.css') }}">{% endblock %}
+{% block categoria %}ADMINISTRACIÓN{% endblock %}
+{% block titulo_pagina %}Administración de cuentas{% endblock %}
+{% block subtitulo %}Aprueba o rechaza a quienes piden ser administradores y revisa los usuarios registrados.{% endblock %}
+
+{% block contenido %}
+{% if falta_migracion %}
+<div class="banner banner-warning" role="alert">
+  <strong>Falta preparar la base de datos.</strong> Importa <code>08_solicitudes_registro.sql</code> en phpMyAdmin para activar las solicitudes de administrador.
+</div>
+{% endif %}
+
+{# ---------- Solicitudes pendientes: un administrador existente decide ---------- #}
+<section class="panel">
+  <div class="panel-heading"><div><h2>Solicitudes pendientes</h2><p>Estas personas pidieron el rol de administrador y no pueden iniciar sesión hasta que alguien las apruebe.</p></div>
+    <span class="contador-pendientes">{{ pendientes|length }}</span></div>
+  {% if pendientes %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Solicitante</th><th>Correo</th><th>Rol pedido</th><th>Fecha</th><th>Decisión</th></tr></thead>
+      <tbody>
+      {% for s in pendientes %}
+        <tr>
+          <td><strong>{{ s.nombre_user }}</strong></td>
+          <td>{{ s.email }}</td>
+          <td><span class="rol rol-{{ s.rol_solicitado }}">{{ s.rol_solicitado }}</span></td>
+          <td class="nowrap">{{ s.creada_en }}</td>
+          <td>
+            {% if puede_decidir %}
+            {# Dos formularios pequeños (POST + token CSRF): aprobar o rechazar #}
+            <div class="acciones">
+              <form method="post" action="{{ url_for('decidir_solicitud', id_solicitud=s.id_solicitud, accion='aprobar') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-primary btn-pequeno">Aprobar</button>
+              </form>
+              <form method="post" action="{{ url_for('decidir_solicitud', id_solicitud=s.id_solicitud, accion='rechazar') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-danger btn-pequeno">Rechazar</button>
+              </form>
+            </div>
+            {% else %}—{% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">No hay solicitudes pendientes.</div>
+  {% endif %}
+</section>
+
+{# ---------- Solicitudes ya resueltas (trazabilidad) ---------- #}
+<section class="panel">
+  <div class="panel-heading"><div><h2>Solicitudes resueltas</h2><p>Las últimas 20 decisiones, con el administrador que las tomó.</p></div></div>
+  {% if resueltas %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Solicitante</th><th>Correo</th><th>Rol pedido</th><th>Resultado</th><th>Resuelta por</th><th>Fecha</th></tr></thead>
+      <tbody>
+      {% for s in resueltas %}
+        <tr>
+          <td><strong>{{ s.nombre_user }}</strong></td>
+          <td>{{ s.email }}</td>
+          <td><span class="rol rol-{{ s.rol_solicitado }}">{{ s.rol_solicitado }}</span></td>
+          <td><span class="state {{ 'state-ok' if s.estado == 'aprobada' else 'state-bad' }}">{{ s.estado }}</span></td>
+          <td>{{ s.resuelta_por or '—' }}</td>
+          <td class="nowrap">{{ s.resuelta_en or '—' }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">Todavía no se ha resuelto ninguna solicitud.</div>
+  {% endif %}
+</section>
+
+{# ---------- Usuarios registrados (solo lectura) ---------- #}
+<section class="panel">
+  <div class="panel-heading"><div><h2>Usuarios registrados</h2><p>Cuentas de la tabla <code>usuarios</code>. Las inactivas están esperando aprobación o fueron rechazadas.</p></div></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Creado</th><th>Último acceso</th></tr></thead>
+      <tbody>
+      {% for u in usuarios %}
+        <tr>
+          <td><strong>{{ u.nombre_user }}</strong></td>
+          <td>{{ u.email }}</td>
+          <td><span class="rol rol-{{ u.rol }}">{{ u.rol }}</span></td>
+          <td><span class="state {{ 'state-ok' if u.activo else 'state-warn' }}">{{ 'Activo' if u.activo else 'Inactivo' }}</span></td>
+          <td class="nowrap">{{ u.creado_en }}</td>
+          <td class="nowrap">{{ u.ultimo_acceso or '—' }}</td>
+        </tr>
+      {% else %}
+        <tr><td colspan="6" class="empty-state">No hay usuarios.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

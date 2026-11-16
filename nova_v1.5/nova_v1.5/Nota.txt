@@ -1,0 +1,16 @@
+ El archivo "crear usuario " tiene  un objetivo para agregar los usuarios para iniciar el aplicativo a la base de datos "novadb" a travez del comando "pip install -r requirements.txt"
+
+sino abre xampp /busca la base de datos /novadb/ sql/ pegalos 
+"INSERT INTO usuarios (id_tipo_user, nombre_user, email, password_hash, activo) VALUES
+((SELECT id_tipo_user FROM tipos_usuario WHERE nombre_tipo_user = 'administrador'), 'Administrador NOVA', 'admin@nova.local',
+ 'pbkdf2:sha256:1000000$hhjnmSVQg3mgvfaG$1a893af54ddf164ab43bdb7f599481048362211917401ffcf4b32b3b23de771d', 1),
+((SELECT id_tipo_user FROM tipos_usuario WHERE nombre_tipo_user = 'operativo'), 'Operador NOVA', 'operativo@nova.local',
+ 'pbkdf2:sha256:1000000$tv7uQJdva7Wvcurc$58311f19159d40a69167d9416a3db95eb24eb12bc32156123b86b16fd028c8d0', 1),
+((SELECT id_tipo_user FROM tipos_usuario WHERE nombre_tipo_user = 'gerencial'), 'Gerente NOVA', 'gerencial@nova.local',
+ 'pbkdf2:sha256:1000000$bUugk95dwJcCiKmr$35bd89c04f08d44496b4dc613d5b9665677d0c53ab93dddca203d202c28b65b4', 1)
+ON DUPLICATE KEY UPDATE password_hash = VALUES(password_hash), activo = 1;
+
+"
+
+usuario = admin@nova.local
+contraseña = nova123

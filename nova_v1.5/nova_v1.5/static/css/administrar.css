@@ -1,0 +1,17 @@
+/*
+  administrar.css — propio del módulo Administrar (administrar.html).
+  Solicitudes de administrador, botones de decisión y etiquetas de rol.
+*/
+
+/* Globito con la cantidad de solicitudes pendientes */
+.contador-pendientes { min-width: 34px; text-align: center; padding: 5px 10px; border-radius: 999px; font-weight: 700; font-size: 0.85rem; background: #3b0764; color: #c084fc; border: 1px solid #581c87; }
+
+/* Aprobar / Rechazar lado a lado */
+.acciones { display: flex; gap: 8px; }
+.acciones form { display: inline; }
+
+/* Etiqueta del rol */
+.rol { display: inline-block; padding: 3px 9px; border-radius: 6px; font-size: 0.68rem; font-weight: 700; text-transform: capitalize; background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+.rol-administrador { color: #c084fc; background: rgba(192, 132, 252, 0.1); border-color: rgba(192, 132, 252, 0.35); }
+.rol-operativo     { color: #38bdf8; background: rgba(56, 189, 248, 0.1);  border-color: rgba(56, 189, 248, 0.3); }
+.rol-gerencial     { color: #4ade80; background: rgba(74, 222, 128, 0.1);  border-color: rgba(74, 222, 128, 0.3); }

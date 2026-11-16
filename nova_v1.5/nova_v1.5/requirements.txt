@@ -1,0 +1,4 @@
+Flask>=3.0
+Flask-SQLAlchemy>=3.1
+PyMySQL>=1.1
+# Si tu servidor fuera MySQL 8 con autenticación caching_sha2_password, agrega también: cryptography

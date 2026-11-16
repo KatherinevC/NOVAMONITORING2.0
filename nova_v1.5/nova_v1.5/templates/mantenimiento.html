@@ -1,0 +1,68 @@
+{#
+  Módulo Mantenimiento. Recibe maquinas, sensores y puede_registrar desde la ruta mantenimiento().
+  El formulario solo se dibuja si el rol puede ejecutar en MANTENIMIENTO; la ruta lo comprueba otra vez.
+#}
+{% extends 'layout.html' %}
+{% block titulo %}Mantenimiento{% endblock %}
+{% block css_pagina %}<link rel="stylesheet" href="{{ url_for('static', filename='css/mantenimiento.css') }}">{% endblock %}
+{% block titulo_pagina %}Mantenimiento{% endblock %}
+{% block subtitulo %}Registro de actividades preventivas, correctivas y predictivas sobre las máquinas.{% endblock %}
+
+{% block contenido %}
+{% if puede_registrar %}
+<section class="panel">
+  <div class="panel-heading"><div><h2>Registrar mantenimiento</h2><p>El operario se toma de la sesión activa; no se permite elegir otro usuario desde el formulario.</p></div></div>
+  <form method="post" class="form-mantenimiento">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-grid">
+      <div class="form-field">
+        <label for="id_maquina">Máquina *</label>
+        <select id="id_maquina" name="id_maquina" required>
+          <option value="">Selecciona una máquina</option>
+          {% for m in maquinas %}<option value="{{ m.id_maquina }}">{{ m.codigo }} · {{ m.nombre_maquina }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="form-field">
+        <label for="tipo">Tipo *</label>
+        <select id="tipo" name="tipo" required>
+          <option value="preventivo">Preventivo</option>
+          <option value="correctivo">Correctivo</option>
+          <option value="predictivo">Predictivo</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label for="id_sensor">Sensor relacionado (opcional)</label>
+        <select id="id_sensor" name="id_sensor">
+          <option value="">Sin sensor específico</option>
+          {% for s in sensores %}<option value="{{ s.id_sensor }}">{{ s.maquina_codigo }} · {{ s.codigo }} · {{ s.variable }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="form-field">
+        <label for="estado">Estado de la actividad *</label>
+        <select id="estado" name="estado" required>
+          <option value="completado">Completado</option>
+          <option value="registrado">Registrado</option>
+          <option value="en_proceso">En proceso</option>
+          <option value="cancelado">Cancelado</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="form-field campo-ancho">
+      <label for="descripcion">Descripción de la actividad realizada *</label>
+      <textarea id="descripcion" name="descripcion" minlength="5" maxlength="5000" required placeholder="Ej.: limpieza de filtro, calibración del sensor, cambio de componente y resultado de la verificación..."></textarea>
+    </div>
+    <button class="btn btn-primary" type="submit">Guardar mantenimiento</button>
+  </form>
+</section>
+{% else %}
+<section class="panel">
+  <div class="panel-heading"><div><h2>Solo consulta</h2><p>Tu rol puede ver el módulo, pero no tiene permiso para registrar mantenimientos.</p></div></div>
+</section>
+{% endif %}
+
+<section class="panel">
+  <div class="panel-heading"><div><h2>Relación de datos</h2></div></div>
+  <p class="help-note">Cada registro se guarda en <code>mantenimientos</code> con máquina, usuario operario, tipo, descripción y fecha. Además se inserta una fila en <code>historial</code>. Si se selecciona un sensor con dispositivo asociado, se crea el vínculo en <code>mantenimiento_sensores</code>. Consúltalos en el módulo <a href="{{ url_for('historial') }}">Historial</a>.</p>
+</section>
+{% endblock %}

@@ -1,0 +1,232 @@
+{#
+  Dashboard de NOVA. Solo entra quien tiene sesión (ruta protegida con @login_requerido).
+  Hereda el menú y el encabezado de layout.html.
+  Variables:
+    resumen            números de las tarjetas (None si la base de datos no respondió)
+    ultimas            las últimas lecturas guardadas
+    estado_simulador   estado del simulador (solo si el rol es administrador)
+  dashboard.js refresca estos números cada pocos segundos sin recargar la página y
+  graficas.js dibuja las gráficas de los sensores (panel "Comportamiento de los sensores").
+#}
+{% extends 'layout.html' %}
+{% block titulo %}Dashboard{% endblock %}
+{% block css_pagina %}<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">{% endblock %}
+{% block titulo_pagina %}NOVA Monitoring{% endblock %}
+
+{# Indicador "Estado de planta" junto al perfil: depende de si llegan lecturas y de si hay alertas #}
+{% block estado_planta %}
+<div class="plant-status">
+  <span class="status-lbl">ESTADO DE PLANTA</span>
+  {% if resumen is none %}
+    <span class="status-val estado-apagado" id="estadoPlanta">Sin datos</span>
+  {% elif not resumen.lecturas_ultimo_minuto %}
+    <span class="status-val estado-apagado" id="estadoPlanta">Sin datos recientes</span>
+  {% elif resumen.alertas_pendientes %}
+    <span class="status-val estado-aviso" id="estadoPlanta">Con alertas</span>
+  {% else %}
+    <span class="status-val" id="estadoPlanta">Operativa</span>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block contenido %}
+{# ======================= TARJETAS DE RESUMEN (datos reales de novadb) ======================= #}
+<section class="metrics-grid">
+  <div class="metric-card">
+    <div class="metric-icon purple-bg">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#a78bfa" stroke-width="2"><rect x="2" y="2" width="20" height="16" rx="2"></rect><line x1="6" y1="22" x2="18" y2="22"></line><line x1="12" y1="18" x2="12" y2="22"></line></svg>
+    </div>
+    <div class="metric-data">
+      <span class="metric-label">MÁQUINAS MONITOREADAS</span>
+      <div class="metric-value" id="valMaquinas">{{ '%02d'|format(resumen.maquinas_total) if resumen else '--' }}</div>
+      <span class="metric-sub">Activos registrados</span>
+    </div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-icon green-bg">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#4ade80" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    </div>
+    <div class="metric-data">
+      <span class="metric-label">OPERACIÓN NORMAL</span>
+      <div class="metric-value" id="valNormal">{{ '%02d'|format(resumen.operativas) if resumen else '--' }}</div>
+      <span class="metric-sub">Máquinas en estado operativa</span>
+    </div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-icon yellow-bg">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#facc15" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+    </div>
+    <div class="metric-data">
+      <span class="metric-label">EN SEGUIMIENTO</span>
+      <div class="metric-value" id="valSeguimiento">{{ '%02d'|format(resumen.en_seguimiento) if resumen else '--' }}</div>
+      <span class="metric-sub">En mantenimiento o detenidas</span>
+    </div>
+  </div>
+
+  <div class="metric-card">
+    <div class="metric-icon red-bg">
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#f87171" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+    </div>
+    <div class="metric-data">
+      <span class="metric-label">ANOMALÍAS</span>
+      <div class="metric-value" id="valAnomalias">{{ '%02d'|format(resumen.alertas_pendientes) if resumen else '--' }}</div>
+      <span class="metric-sub">Alertas sin atender</span>
+    </div>
+  </div>
+</section>
+
+{# ======================= SIMULADOR DE LECTURAS (solo administrador) =======================
+   Enciende simulador/generar_lecturas.py en segundo plano para comprobar que todo funciona:
+   cada ronda guarda una lectura por canal en la tabla lecturas y, si alguna cruza su umbral,
+   el trigger de la base de datos crea una alerta. Los botones son formularios normales (POST);
+   dashboard.js solo refresca los contadores y la lista de verificación. #}
+{% if puede_ejecutar('CRUD') %}
+<section class="panel" id="panelSimulador">
+  <div class="panel-heading">
+    <div>
+      <h2>Simulador de lecturas</h2>
+      <p>Genera lecturas de prueba para los canales de la planta. Sirve para verificar que el generador, la base de datos, las alertas y este dashboard funcionan juntos.</p>
+    </div>
+    <span class="pill" id="simEstado">Detenido</span>
+  </div>
+
+  <div class="sim-controles">
+    <form method="post" action="{{ url_for('simulador_iniciar') }}" class="sim-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-field">
+        <label for="simIntervalo">Una ronda cada</label>
+        <select id="simIntervalo" name="intervalo">
+          <option value="2">2 segundos</option>
+          <option value="5" selected>5 segundos</option>
+          <option value="10">10 segundos</option>
+        </select>
+      </div>
+      <div class="form-field">
+        <label for="simHistorial">Historial previo</label>
+        <select id="simHistorial" name="historial_horas">
+          <option value="0" selected>Ninguno</option>
+          <option value="0.5">30 minutos</option>
+          <option value="1">1 hora</option>
+          <option value="3">3 horas</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary" id="btnIniciar">▶ Iniciar</button>
+    </form>
+
+    <form method="post" action="{{ url_for('simulador_detener') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-secondary" id="btnDetener">■ Detener</button>
+    </form>
+
+    {# data-confirmar: dashboard.js pide confirmación antes de enviar (acción destructiva) #}
+    <form method="post" action="{{ url_for('simulador_limpiar') }}" data-confirmar="Esto borra TODAS las lecturas y alertas guardadas. ¿Continuar?">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-danger" id="btnLimpiar">Borrar datos</button>
+    </form>
+  </div>
+
+  <div class="sim-contadores">
+    <div><span>Canales activos</span><strong id="simCanales">--</strong></div>
+    <div><span>Con umbral</span><strong id="simUmbral">--</strong></div>
+    <div><span>Rondas</span><strong id="simCiclos">0</strong></div>
+    <div><span>Lecturas guardadas</span><strong id="simLecturas">0</strong></div>
+    <div><span>Última ronda</span><strong id="simUltima">--</strong></div>
+  </div>
+
+  {# Lista de verificación: se marca sola cuando cada parte del recorrido funciona #}
+  <ul class="checklist" id="checklist">
+    <li id="chkBd"><span class="chk-icono">○</span> Conexión con la base de datos</li>
+    <li id="chkCanales"><span class="chk-icono">○</span> Canales de sensores detectados</li>
+    <li id="chkRondas"><span class="chk-icono">○</span> Simulador generando rondas</li>
+    <li id="chkLecturas"><span class="chk-icono">○</span> Lecturas llegando a la tabla <code>lecturas</code> (último minuto)</li>
+    <li id="chkAlertas"><span class="chk-icono">○</span> Alertas creadas por el trigger (aparecen cuando una lectura cruza un umbral)</li>
+  </ul>
+  <p class="help-note" id="simMensaje" hidden></p>
+</section>
+{% endif %}
+
+{# ======================= GRÁFICAS DEL COMPORTAMIENTO DE LOS SENSORES =======================
+   Se dibujan con SVG propio (static/js/graficas.js): no necesitan internet ni librerías.
+   Los datos llegan de /api/graficas/... y se actualizan solos mientras el simulador (o los sensores
+   reales) guardan lecturas. Solo las ve quien tiene permiso de ver el módulo MONITOREO. #}
+{% if puede_ver('MONITOREO') %}
+<section class="panel" id="panelGraficas">
+  <div class="panel-heading">
+    <div>
+      <h2>Comportamiento de los sensores</h2>
+      <p>Elige una máquina y una variable para ver su tendencia. Las líneas punteadas son los umbrales (roja = máximo, amarilla = mínimo) y los puntos rojos son lecturas fuera de rango. La gráfica se actualiza sola.</p>
+    </div>
+    <span class="pill" id="grEstado">Cargando…</span>
+  </div>
+
+  <div class="gr-controles">
+    <div class="form-field"><label for="grMaquina">Máquina</label><select id="grMaquina"></select></div>
+    <div class="form-field"><label for="grVariable">Variable</label><select id="grVariable"></select></div>
+    <div class="form-field">
+      <label for="grVentana">Ventana de tiempo</label>
+      <select id="grVentana">
+        <option value="5">Últimos 5 minutos</option>
+        <option value="15" selected>Últimos 15 minutos</option>
+        <option value="60">Última hora</option>
+      </select>
+    </div>
+  </div>
+
+  {# Gráfica principal de un sensor + sus estadísticas #}
+  <div class="gr-principal">
+    <div class="gr-titulo"><strong id="grTitulo">—</strong><span id="grUmbrales" class="gr-umbrales"></span></div>
+    <div id="grLinea" class="gr-caja gr-caja-grande"></div>
+    <div class="gr-stats" id="grStats"></div>
+  </div>
+
+  {# Una mini-gráfica por cada sensor de la máquina elegida (clic en una para verla en grande) #}
+  <h3 class="gr-subtitulo">Todos los sensores de la máquina <small>haz clic en uno para verlo arriba</small></h3>
+  <div id="grMini" class="gr-mini-grid"></div>
+</section>
+
+<section class="gr-fila">
+  <article class="panel">
+    <div class="panel-heading"><div><h2>Estado de los sensores</h2><p>Según la última lectura de cada sensor frente a sus umbrales.</p></div></div>
+    <div id="grDona" class="gr-dona"></div>
+  </article>
+  {% if puede_ver('ALERTAS') %}
+  <article class="panel">
+    <div class="panel-heading"><div><h2>Alertas pendientes por área</h2><p>Dónde se concentran las lecturas fuera de rango sin atender.</p></div></div>
+    <div id="grBarras" class="gr-barras"></div>
+  </article>
+  {% endif %}
+</section>
+{% endif %}
+
+{# ======================= ÚLTIMAS LECTURAS GUARDADAS ======================= #}
+{% if puede_ver('MONITOREO') %}
+<section class="panel" id="panelUltimas">
+  <div class="panel-heading">
+    <div>
+      <h2>Últimas lecturas guardadas</h2>
+      <p>Las 8 mediciones más recientes de la tabla <code>lecturas</code>. Se actualizan solas cada 5 segundos.</p>
+    </div>
+    <a href="{{ url_for('monitoreo') }}" class="btn btn-secondary">Ver monitoreo completo</a>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Hora</th><th>Máquina</th><th>Sensor</th><th>Variable</th><th class="num">Valor</th></tr></thead>
+      <tbody id="tbodyUltimas">
+        {% for l in ultimas %}
+        <tr><td>{{ l.fecha_hora[11:19] }}</td><td>{{ l.maquina }}</td><td>{{ l.sensor }}</td><td>{{ l.variable }}</td><td class="num">{% if l.unidad == '0/1' %}{{ 'Sí' if l.valor else 'No' }}{% elif l.unidad == 'cód.' %}{{ '%d'|format(l.valor) }}{% else %}{{ '%.2f'|format(l.valor) }} {{ l.unidad }}{% endif %}</td></tr>
+        {% else %}
+        <tr><td colspan="5" class="empty-state">Todavía no hay lecturas.{% if puede_ejecutar('CRUD') %} Pulsa «Iniciar» en el simulador.{% endif %}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script src="{{ url_for('static', filename='js/graficas.js') }}"></script>
+{% endblock %}

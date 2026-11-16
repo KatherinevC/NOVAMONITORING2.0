@@ -1,0 +1,15 @@
+CREATE TABLE IF NOT EXISTS solicitudes_registro (
+  id_solicitud INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  id_user      INT UNSIGNED     NOT NULL,                       -- la cuenta que pide el permiso
+  id_tipo_user TINYINT UNSIGNED NOT NULL,                       -- el rol que pidió (administrador)
+  estado       ENUM('pendiente','aprobada','rechazada') NOT NULL DEFAULT 'pendiente',
+  creada_en    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  resuelta_en  DATETIME NULL,
+  resuelta_por INT UNSIGNED NULL,                               -- el administrador que decidió
+  UNIQUE KEY uq_solicitud_usuario (id_user),                    -- una solicitud por cuenta
+  KEY idx_solicitud_estado (estado, creada_en),
+  CONSTRAINT fk_solicitud_usuario FOREIGN KEY (id_user)      REFERENCES usuarios (id_user) ON DELETE CASCADE,
+  CONSTRAINT fk_solicitud_rol     FOREIGN KEY (id_tipo_user) REFERENCES tipos_usuario (id_tipo_user),
+  CONSTRAINT fk_solicitud_admin   FOREIGN KEY (resuelta_por) REFERENCES usuarios (id_user) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+  COMMENT='Solicitudes de cuentas con rol privilegiado pendientes de aprobación';

@@ -1,0 +1,41 @@
+{#
+  auth_layout.html — esqueleto de las páginas SIN sesión: iniciar sesión, registro y mensajes.
+  Muestra una tarjeta centrada con el logo de NOVA (igual que el menú lateral del resto del sistema).
+  Bloques que rellena cada página:
+    titulo / css_pagina / intro / contenido / scripts
+#}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NOVA - {% block titulo %}{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+  {% block css_pagina %}{% endblock %}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="auth-body">
+
+  <div class="auth-card {% block clase_tarjeta %}{% endblock %}">
+
+    {# Logo y nombre #}
+    <div class="auth-header">
+      <img src="{{ url_for('static', filename='img/astronauta-nova.jpeg') }}" alt="NOVA Logo" class="auth-avatar">
+      <div class="auth-brand">
+        <h1>NOVA</h1>
+        <span>INDUSTRIAL MONITORING</span>
+      </div>
+    </div>
+
+    <div class="auth-intro">
+      {% block intro %}{% endblock %}
+    </div>
+
+    {% block contenido %}{% endblock %}
+  </div>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,21 @@
+/*
+  registro.css — propio de la pantalla "Crear cuenta".
+  La tarjeta ancha (.auth-card-ancha) ya la define base.css; aquí va la rejilla de dos
+  columnas, el aviso del rol administrador y la ayuda de la contraseña.
+*/
+
+/* Dos campos por fila (nombre/correo y contraseña/confirmar) */
+.form-fila { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* Aviso que aparece al elegir un rol que requiere aprobación (lo muestra registro.js) */
+.aviso-rol { margin-top: 4px; padding: 10px 12px; border-radius: 8px; font-size: 0.78rem; line-height: 1.5; color: #fde68a; background: rgba(250, 204, 21, 0.08); border: 1px solid rgba(250, 204, 21, 0.3); }
+.aviso-rol[hidden] { display: none; }
+
+/* Ayuda en vivo de la contraseña (registro.js) */
+.ayuda-clave { margin-top: -8px; font-size: 0.75rem; color: #62748e; min-height: 1em; }
+.ayuda-clave.mal { color: #fca5a5; }
+.ayuda-clave.bien { color: #86efac; }
+
+.form-group select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, #5c708a 50%), linear-gradient(135deg, #5c708a 50%, transparent 50%); background-position: calc(100% - 18px) 50%, calc(100% - 13px) 50%; background-size: 5px 5px; background-repeat: no-repeat; padding-right: 34px; }
+
+@media (max-width: 560px) { .form-fila { grid-template-columns: 1fr; } }

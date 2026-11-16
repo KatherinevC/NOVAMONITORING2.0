@@ -1,0 +1,15 @@
+/*
+  login.css — solo lo propio de la pantalla de inicio de sesión.
+  La tarjeta, el logo, los campos y el botón vienen de base.css (sección 4).
+*/
+
+/* Enlaces de abajo: "¿Olvidaste tu contraseña?" y "Regístrate" */
+.auth-links { margin-top: 2px; }
+.auth-links > a { font-size: 0.8rem; }
+
+/* El banner de "sin conexión" en el login se ve más compacto y llama la atención */
+#loginForm .btn-submit:disabled { cursor: not-allowed; filter: grayscale(0.6); }
+.auth-card .banner strong { display: block; width: 100%; }
+
+/* Mensaje de error de credenciales: aparece justo encima del formulario */
+#errorMessage { text-align: center; }

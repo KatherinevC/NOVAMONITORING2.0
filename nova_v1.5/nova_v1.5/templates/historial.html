@@ -1,0 +1,39 @@
+{#
+  Módulo Historial: bitácora de actividades (tabla historial). Solo consulta: no se editan eventos pasados.
+  Recibe `eventos` desde la ruta historial().
+#}
+{% extends 'layout.html' %}
+{% block titulo %}Historial{% endblock %}
+{% block css_pagina %}<link rel="stylesheet" href="{{ url_for('static', filename='css/historial.css') }}">{% endblock %}
+{% block titulo_pagina %}Historial de actividades{% endblock %}
+{% block subtitulo %}Mantenimientos, atención de alertas y movimientos del sistema, con fecha y responsable.{% endblock %}
+
+{% block contenido %}
+<section class="panel">
+  <div class="panel-heading"><div><h2>Eventos registrados</h2><p>Los últimos 500 eventos: mantenimientos, alertas atendidas y cuentas de usuario, con operario, máquina y sensor.</p></div></div>
+  {% if eventos %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Fecha</th><th>Evento</th><th>Descripción</th><th>Máquina</th><th>Sensor</th><th>Operario</th><th>Estado</th><th>Referencia</th></tr></thead>
+      <tbody>
+      {% for e in eventos %}
+        <tr>
+          <td class="nowrap">{{ e.fecha_hora }}</td>
+          {# tipo-<evento> da un color distinto a cada categoría (ver historial.css) #}
+          <td><span class="tipo tipo-{{ e.tipo_evento }}">{{ e.tipo_evento }}</span></td>
+          <td class="descripcion">{{ e.descripcion }}</td>
+          <td>{% if e.maquina_codigo %}<strong>{{ e.maquina_codigo }}</strong><small>{{ e.nombre_maquina }}</small>{% else %}—{% endif %}</td>
+          <td>{% if e.sensor_codigo %}{{ e.sensor_codigo }}<small>{{ e.variable or '' }}</small>{% else %}—{% endif %}</td>
+          <td>{{ e.operario or 'Usuario no disponible' }}</td>
+          <td><span class="state {% if e.estado in ['completado', 'atendida'] %}state-ok{% elif e.estado == 'cancelado' %}state-bad{% else %}state-warn{% endif %}">{{ e.estado }}</span></td>
+          <td class="nowrap">{% if e.id_manteni %}Mantenimiento #{{ e.id_manteni }}{% elif e.id_alerta %}Alerta #{{ e.id_alerta }}{% else %}Evento #{{ e.id_historial }}{% endif %}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">Aún no hay eventos registrados en historial.</div>
+  {% endif %}
+</section>
+{% endblock %}

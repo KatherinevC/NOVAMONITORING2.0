@@ -1,0 +1,49 @@
+{#
+  Módulo Máquinas: inventario de la tabla maquinas con su área y la cantidad de sensores.
+  Recibe `maquinas` desde la ruta maquinas() (rutas/rutas.py).
+#}
+{% extends 'layout.html' %}
+{% block titulo %}Máquinas{% endblock %}
+{% block css_pagina %}<link rel="stylesheet" href="{{ url_for('static', filename='css/maquinas.css') }}">{% endblock %}
+{% block titulo_pagina %}Máquinas{% endblock %}
+{% block subtitulo %}Inventario de equipos de la planta, su área y los sensores asociados.{% endblock %}
+
+{% block contenido %}
+{# Contadores por estado. Jinja no permite sumar dentro de un bucle, por eso se usan filtros #}
+{% set operativas = maquinas|selectattr('estado', 'equalto', 'operativa')|list|length %}
+{% set con_falla = maquinas|selectattr('estado', 'in', ['falla', 'averiada'])|list|length %}
+{% set otras = maquinas|length - operativas - con_falla %}
+<section class="resumen-maquinas">
+  <article class="resumen-item"><span>Total de máquinas</span><strong>{{ maquinas|length }}</strong></article>
+  <article class="resumen-item resumen-ok"><span>Operativas</span><strong>{{ operativas }}</strong></article>
+  <article class="resumen-item resumen-aviso"><span>Mantenimiento / detenidas</span><strong>{{ otras }}</strong></article>
+  <article class="resumen-item resumen-mal"><span>Con falla</span><strong>{{ con_falla }}</strong></article>
+</section>
+
+<section class="panel">
+  <div class="panel-heading"><div><h2>Inventario de máquinas</h2><p>Listado real de la tabla <code>maquinas</code>, vinculado con áreas y sensores.</p></div></div>
+  {% if maquinas %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Código</th><th>Máquina</th><th>Área</th><th>Tipo</th><th>Ubicación</th><th>Estado</th><th class="num">Sensores</th></tr></thead>
+      <tbody>
+      {% for m in maquinas %}
+        <tr>
+          <td class="codigo">{{ m.codigo }}</td>
+          <td><strong>{{ m.nombre_maquina }}</strong></td>
+          <td>{{ m.nombre_area }}</td>
+          <td>{{ m.tipo_maquina or '—' }}</td>
+          <td>{{ m.ubicacion or '—' }}</td>
+          {# operativa = verde, falla/averiada = rojo, cualquier otro (mantenimiento, detenida) = amarillo #}
+          <td><span class="state {% if m.estado == 'operativa' %}state-ok{% elif m.estado in ['falla', 'averiada'] %}state-bad{% else %}state-warn{% endif %}">{{ m.estado }}</span></td>
+          <td class="num">{{ m.total_sensores }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">No hay máquinas o no se pudo consultar la tabla. Revisa la consola de Flask.</div>
+  {% endif %}
+</section>
+{% endblock %}
